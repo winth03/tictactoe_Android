@@ -2,7 +2,7 @@ class Button {
     float posX, posY, rectWidth, rectHeight, radius;
     String text;
     color col, col1, col2;
-    Boolean toggle;
+    boolean toggle;
     Runnable func;
 
     Button(String text, float x, float y, float rectWidth, float rectHeight, float radius, Runnable func) {
@@ -19,7 +19,7 @@ class Button {
         this.toggle = false;
     }
 
-    Button(String text, float x, float y, float rectWidth, float rectHeight, float radius, color col1, color col2, Boolean toggle, Runnable func) {
+    Button(String text, float x, float y, float rectWidth, float rectHeight, float radius, color col1, color col2, boolean toggle, Runnable func) {
         this.text = text;
         this.posX = x;
         this.posY = y;
@@ -50,7 +50,7 @@ class Button {
         }
     }
 
-    Boolean overButton() {
+    boolean overButton() {
         if (mouseX >= this.posX && mouseX <= this.posX + this.rectWidth && mouseY >= this.posY && mouseY <= this.posY + this.rectHeight) {
             return true;
         }
@@ -64,10 +64,23 @@ class Board {
     float posY, size = 1;
     String winner;
     int turn = 1, alpha = 255;
-    Boolean hint = false, ai = true;
+    boolean hint = false, ai = false, clone = false;
 
     Board(float y) {
         this.posY = y;
+    }
+
+    Board(Board another) {
+        this.posY = another.posY;
+        this.grid = deepCopy(another.grid);
+        this.newSymbol = another.newSymbol.clone();
+        this.size = another.size;
+        this.winner = another.winner;
+        this.turn = another.turn;
+        this.alpha = another.alpha;
+        this.hint = another.hint;
+        this.ai = another.ai;
+        this.clone = true;
     }
 
     private void O(int x, int y, int alpha) {
@@ -141,9 +154,8 @@ class Board {
             else this.turn = 1;
 
             this.size = 0;
-        }
-        else {
-            int action = brain.getAction(this);
+        } else {
+            int action = bestMove(this);
             int x = action % 3;
             int y = floor(action / 3);
             if (this.grid[y][x] != 0 || this.size < 1) return; // Check if cell is empty or animation is finished
@@ -178,12 +190,12 @@ class Board {
             // Win
             if (sum == 3 || sum == -3) {
                 stroke(252, 74, 113, this.alpha);
-                line(0, this.posY + (width/3) * i + halfCell, width, this.posY + (width/3) * i + halfCell);
+                if (!this.clone) line(0, this.posY + (width/3) * i + halfCell, width, this.posY + (width/3) * i + halfCell);
                 if (sum == 3) this.winner = "O";
                 else this.winner = "X";
             }
             // Hint
-            if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint) {
+            if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint && !(this.ai && this.turn == -1)) {
                 if (this.turn == 1) O(hintCell[0], hintCell[1], 50);
                 else X(hintCell[0], hintCell[1], 50);
             }
@@ -202,12 +214,12 @@ class Board {
             // Win
             if (sum == 3 || sum == -3) {
                 stroke(252, 74, 113, this.alpha);
-                line((width/3) * i + halfCell, this.posY, (width/3) * i + halfCell, this.posY + width);
+                if (!this.clone) line((width/3) * i + halfCell, this.posY, (width/3) * i + halfCell, this.posY + width);
                 if (sum == 3) this.winner = "O";
                 else this.winner = "X";
             }
             // Hint
-            if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint) {
+            if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint && !(this.ai && this.turn == -1)) {
                 if (this.turn == 1) O(hintCell[0], hintCell[1], 50);
                 else X(hintCell[0], hintCell[1], 50);
             }
@@ -225,12 +237,12 @@ class Board {
         // Win
         if (sum == 3 || sum == -3) {
             stroke(252, 74, 113, this.alpha);
-            line(0, this.posY, width, this.posY + width);
+            if (!this.clone) line(0, this.posY, width, this.posY + width);
             if (sum == 3) this.winner = "O";
             else this.winner = "X";
         }
         // Hint
-        if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint) {
+        if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint && !(this.ai && this.turn == -1)) {
             if (this.turn == 1) O(hintCell[0], hintCell[1], 50);
             else X(hintCell[0], hintCell[1], 50);
         }
@@ -247,18 +259,18 @@ class Board {
         // Win
         if (sum == 3 || sum == -3) {
             stroke(252, 74, 113, this.alpha);
-            line(width, this.posY, 0, this.posY + width);
+            if (!this.clone) line(width, this.posY, 0, this.posY + width);
             if (sum == 3) this.winner = "O";
             else this.winner = "X";
         }
         // Hint
-        if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint) {
+        if (count == 2 && hintCell != new int[] {-1, -1} && this.winner == null && this.hint && !(this.ai && this.turn == -1)) {
             if (this.turn == 1) O(hintCell[0], hintCell[1], 50);
             else X(hintCell[0], hintCell[1], 50);
         }
 
         // Check for draw
-        Boolean draw = true;
+        boolean draw = true;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (this.grid[i][j] == 0) {
@@ -270,4 +282,18 @@ class Board {
         }
         if (draw && this.winner == null) this.winner = "";
     }
+}
+
+int[][] deepCopy(int[][] original) {
+    if (original == null) {
+        return null;
+    }
+
+    final int[][] result = new int[original.length][];
+    for (int i = 0; i < original.length; i++) {
+        result[i] = Arrays.copyOf(original[i], original[i].length);
+        // For Java versions prior to Java 6 use the next:
+        // System.arraycopy(original[i], 0, result[i], 0, original[i].length);
+    }
+    return result;
 }

@@ -1,10 +1,10 @@
-String lastSaved;
 Board board;
 Button[] buttons;
 Button save, load, clear, hint, ai;
-AI brain;
+boolean saved = false;
 
 void setup() {
+    //size(500, 1000);
     fullScreen();
     textAlign(CENTER, CENTER);
     board = new Board(height/2 - width/2);
@@ -43,9 +43,9 @@ void setup() {
     // Try to load last save
     try {
         Load();
-        brain = new AI();
     }
-    catch(Exception e) {
+    catch(NullPointerException e) {
+        e.printStackTrace();
         Clear();
         Load();
     }
@@ -57,6 +57,9 @@ void draw() {
     // Animation
     if (board.size < 1) { // New symbol animation
         board.size += 0.1;
+    }
+    else if (board.ai && board.turn == -1 && board.winner == null) {
+        board.updateBoard();
     }
     if (board.winner != null && board.size >= 1 && board.alpha > 0) { // Win animation
         board.alpha -= 2.5;
@@ -89,13 +92,9 @@ void draw() {
     board.show();
     board.checkWin();
 
-    // Show last saved time
+    // Show ai status
     textSize(width/20);
-    if (lastSaved != null) {
-        text("Last Saved : " + lastSaved + " Brain : " + (brain == null ? "N/A" : "OK"), width/2, board.posY + width + (height-width)/16+10);
-    } else {
-        text("Last Saved : N/A Brain : " + (brain == null ? "N/A" : "OK"), width/2, board.posY + width + (height-width)/16+10);
-    }
+    text("Save : " + (saved ? "OK" : "N/A"), width/2, board.posY + width + (height-width)/16+10);
 }
 
 void mouseReleased() {
@@ -106,58 +105,51 @@ void mouseReleased() {
         }
     }
     // Update XO
-    board.updateBoard();
+    if (!(board.ai && board.turn == -1) || board.winner != null) board.updateBoard();
 }
 
 void Save() {
     // Save data
-    println("Saved");
-    JSONArray jsonGrid = new JSONArray();
-    JSONArray row;
+    Table data = new Table();
+    data.addColumn();
+    data.addColumn();
+    data.addColumn();
     for (int i = 0; i < 3; i++) {
-        row = new JSONArray();
+        TableRow row = data.addRow();
         for (int j = 0; j < 3; j++) {
             row.setInt(j, board.grid[i][j]);
         }
-        jsonGrid.setJSONArray(i, row);
     }
-    JSONObject data = new JSONObject();
-    data.setJSONArray("grid", jsonGrid);
-    data.setInt("turn", board.turn);
-    lastSaved = String.format("%02d/%02d/%d %02d:%02d:%02d", day(), month(), year(), hour(), minute(), second());
-    data.setString("date", lastSaved);
-    saveJSONObject(data, "save.json");
+    saveTable(data, "save.csv");
+    saved = true;
 }
 
 void Load() {
     // Load data
-    JSONObject data= loadJSONObject("save.json");
-    JSONArray jsonGrid = data.getJSONArray("grid");
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            board.grid[i][j] = jsonGrid.getJSONArray(i).getInt(j);
+    Table data = loadTable("save.csv");
+    int xCount = 0, oCount = 0, rowCount = 0;
+    for (TableRow row : data.rows()) {
+        for (int i = 0; i < 3; i++) {
+            int symbol = row.getInt(i);
+            board.grid[rowCount][i] = symbol;
+            if (symbol == 1) oCount++;
+            else if (symbol == -1) xCount++;
         }
+        rowCount++;
     }
-    board.turn = data.getInt("turn");
-    lastSaved = data.getString("date");
+    if (rowCount == 0) {
+        saved = false;
+        return;
+    } 
+    board.turn = oCount > xCount ? -1 : 1;
+    saved = true;
 }
 
 void Clear() {
-    // Set default data
-    JSONArray jsonGrid = new JSONArray();
-    JSONArray row;
-    for (int i = 0; i < 3; i++) {
-        row = new JSONArray();
-        for (int j = 0; j < 3; j++) {
-            row.setInt(j, 0);
-        }
-        jsonGrid.setJSONArray(i, row);
-    }
-    JSONObject data = new JSONObject();
-    data.setJSONArray("grid", jsonGrid);
-    data.setInt("turn", 1);
-    lastSaved = null;
-    saveJSONObject(data, "save.json");
+    // Save empty file
+    Table data = new Table();
+    saveTable(data, "save.csv");
+    saved = false;
 }
 
 void Hint() {

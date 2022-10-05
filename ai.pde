@@ -1,48 +1,71 @@
-import net.razorvine.pickle.*;
-import net.razorvine.pickle.objects.*;
-import java.io.*;
 import java.util.*;
 
-class AI {
-    Map qtable = new HashMap();
-    
-    AI() throws IOException {
-        this.LoadQ();
-    }
-
-    private void LoadQ() throws IOException {
-        try (InputStream input = createInput("qtable.pkl")) {
-            Unpickler up = new Unpickler();
-            qtable = (Map)up.load(input);
-        }
-    }
-
-    int getAction(Board b) {
-        int[][] grid = b.grid.clone();
-        Object[] state = new Object[9];
-        Boolean[] pa = new Boolean[9];
-        for (int x = 0; x < 3; x++) {
-            state[x] = (Object)(grid[0][x] == 1 ? "O" : "X");
-            state[x+3] = (Object)(grid[1][x] == 1 ? "O" : "X");
-            state[x+6] = (Object)(grid[2][x] == 1 ? "O" : "X");
-            pa[x] = (grid[0][x] == 0 ? true : false);
-            pa[x+3] = (grid[1][x] == 0 ? true : false);
-            pa[x+6] = (grid[2][x] == 0 ? true : false);
-        }
-
-        float[] rewards = new float[9];
-        for (int i = 0; i < 9; i++) {
-            Object[] k = {state, (Object)i};
-            rewards[i] = (float)qtable.getOrDefault(k, 1.0);
-        }
-        printArray(rewards);
-
-        for (int i = 0; i < 9; i++) {
-            if (rewards[i] == max(rewards) && pa[i]) {
-                return i;
+int bestMove(Board b) {
+    // AI to make its turn
+    Board bClone = new Board(b);
+    int[][] board = bClone.grid;
+    int bestScore = -999;
+    int[] move = {0, 0};
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            // Is the spot available?
+            if (board[i][j] == 0) {
+                board[i][j] = -1;
+                bClone.checkWin();
+                int score = minimax(bClone, 0, false);
+                board[i][j] = 0;
+                if (score > bestScore) {
+                    bestScore = score;
+                    move = new int[]{ i, j };
+                }
             }
         }
+    }
+    return move[0]*3 + move[1];
+}
 
-        return -1;
+int minimax(Board b, int depth, boolean isMaximizing) {
+    Map<String, Integer> scores = new HashMap();
+    scores.put("X", 10);
+    scores.put("O", -10);
+    scores.put("", 0);
+
+    Board bClone = new Board(b);
+    int[][] board = bClone.grid;
+    String result = bClone.winner;
+    if (result != null) {
+        return scores.get(result);
+    }
+
+    if (isMaximizing) {
+        int bestScore = -999;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                // Is the spot available?
+                if (board[i][j] == 0) {
+                    board[i][j] = -1;
+                    bClone.checkWin();
+                    int score = minimax(bClone, depth + 1, false);
+                    board[i][j] = 0;
+                    bestScore = max(score, bestScore);
+                }
+            }
+        }
+        return bestScore;
+    } else {
+        int bestScore = 999;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                // Is the spot available?
+                if (board[i][j] == 0) {
+                    board[i][j] = 1;
+                    bClone.checkWin();
+                    int score = minimax(bClone, depth + 1, true);
+                    board[i][j] = 0;
+                    bestScore = min(score, bestScore);
+                }
+            }
+        }
+        return bestScore;
     }
 }
