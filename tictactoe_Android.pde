@@ -9,45 +9,15 @@ void setup() {
     //fullScreen();
     textAlign(CENTER, CENTER);
     rectMode(CENTER);
-    board = new Board(height/2 - width/2);
-    save = new Button("Save", width/4, height - (height/10 + ((height-width)/8+20)/2), width/2 - 50, (height-width)/8+20, 50, new Runnable() {
-        @Override void run() {
-            Save();
-        }
-    }
-    );
-    load = new Button("Load", width/2 + 25, height - (height/10 + (height-width)/8+20), width/2 - 50, (height-width)/8+20, 50, new Runnable() {
-        @Override void run() {
-            Load();
-        }
-    }
-    );
-    clear = new Button("Clear", 25, height - (height/100 + (height-width)/8+20), width/2 - 50, (height-width)/8+20, 50, new Runnable() {
-        @Override void run() {
-            Clear();
-        }
-    }
-    );
-    hint = new Button("Hint", width/2 + 25, height - (height/100 + (height-width)/8+20), width/2 - 50, (height-width)/8+20, 50, color(201, 141, 91), color(231, 171, 121), true, new Runnable() {
-        @Override void run() {
-            Hint();
-        }
-    }
-    );
-    ai = new Button("AI", 25, height/100, width/2 - 50, (height-width)/8+20, 50, color(201, 141, 91), color(231, 171, 121), true, new Runnable() {
-        @Override void run() {
-            AI();
-        }
-    }
-    );
-    mode = new Button("Mode", width/2 + 25, height/100, width/2 - 50, (height-width)/8+20, 50, new Runnable() {
-        @Override void run() {
-            Mode();
-        }
-    }
-    );
+    board = new Board(height / 2 - width / 2);
+    save = new Button("Save", width / 4, height - (height / 10 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width/20,() -> Save());
+    load = new Button("Load", 3 * width / 4, height - (height / 10 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width/20,() -> Load());
+    clear = new Button("Clear", width / 4, height - (height / 100 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width/20,() -> Clear());
+    hint = new Button("Hint", 3 * width / 4, height - (height / 100 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width/20, color(201, 141, 91), color(231, 171, 121), true,() -> Hint());
+    ai = new Button("AI", width / 4, height / 100 + (((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width/20, color(201, 141, 91), color(231, 171, 121), true,() -> AI());
+    mode = new Button("Mode", 3 * width / 4, height / 100 + (((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width/20,() -> Mode());
     buttons = new Button[] {save, load, clear, hint, ai, mode};
-
+    
     // Try to load last save
     try {
         Load();
@@ -61,7 +31,7 @@ void setup() {
 
 void draw() {
     background(15, 21, 50);
-
+    
     // Animation
     if (board.size < 1) { // New symbol animation
         board.size += 0.1;
@@ -72,40 +42,39 @@ void draw() {
     if (board.winner != null && board.size >= 1 && board.alpha > 0) { // Win animation
         board.alpha -= 2.5;
     }
-
+    
     // Show game result
     if (board.winner != null && board.alpha <= 0) {
         fill(225);
-        textSize(height/15);
+        textSize(height / 15);
         if (board.winner != null && board.winner != "") {
-            text(board.winner + " WINS", width/2, height/2);
+            text(board.winner + " WINS", width / 2, height / 2);
         } else if (board.winner == "") {
-            text("DRAW", width/2, height/2);
+            text("DRAW", width / 2, height / 2);
         }
-        textSize(height/30);
-        text("Tap to restart", width/2, height/2 + height/15);
+        textSize(height / 30);
+        text("Tap to restart", width / 2, height / 2 + height / 15);
     }
     // Draw UI
     fill(225, board.alpha);
-    textSize((height-width)/8);
+    textSize((height - width) / 8);
     if (board.turn == 1) {
-        text("Turn : O", width/2, board.posY - ((height-width)/8+20));
+        text("Turn : O", width / 2, board.posY - ((height - width) / 8 + 20));
     } else {
-        text("Turn : X", width/2, board.posY - ((height-width)/8+20));
+        text("Turn : X", width / 2, board.posY - ((height - width) / 8 + 20));
     }
     for (Button btn : buttons) {
         if (!btn.toggle) { // Button hover
             btn.col = mousePressed && btn.overButton() ? btn.col2 : btn.col1;
-            
         }
         btn.show();
     }
     board.show();
     board.checkWin();
-
+    
     // Show ai status
-    textSize(width/20);
-    text("Save : " + (saved ? "OK" : "N/A") + " Hint : " + (board.hint ? "ON" : "OFF") + "\nAI : " + (board.ai ? "ON" : "OFF") + " Mode : " + (diff != 0 ? (diff != 1 ? ( diff != 2 ? "Easy" : "Normal" ) : "Hard") : "GOD"), width/2, board.posY + width + (height-width)/16+10);
+    textSize(width / 20);
+    text("Save : " + (saved ? "OK" : "N/A") + " Hint : " + (board.hint ? "ON" : "OFF") + "\nAI : " + (board.ai ? "ON" : "OFF") + " Mode : " + (diff != 0 ? (diff != 1 ? (diff != 2 ? "Easy" : "Normal") : "Hard") : "GOD"), width / 2, board.posY + width + (height - width) / 50 + 10);
 }
 
 void mouseReleased() {
@@ -152,7 +121,7 @@ void Load() {
         saved = false;
         return;
     } 
-    board.turn = oCount > xCount ? -1 : 1;
+    board.turn = oCount > xCount ? - 1 : 1;
     saved = true;
 }
 
@@ -172,7 +141,7 @@ void AI() {
 }
 
 void Mode() {
-    switch (diff) {
+    switch(diff) {
         case 0:
             diff = 1;
             board.epsilon = 0.1;
