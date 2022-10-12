@@ -61,7 +61,7 @@ class Button {
 class Board {
     int[][] grid = new int[3][3];
     int[] newSymbol = {-1, -1};
-    float posY, size = 1;
+    float posY, size = 1, epsilon = 0;
     String winner;
     int turn = 1, alpha = 255;
     boolean hint = false, ai = false, clone = false;
@@ -155,7 +155,20 @@ class Board {
 
             this.size = 0;
         } else {
-            int action = bestMove(this);
+            int action;
+            if (random(1) < this.epsilon) {
+                List<Integer> pa = new ArrayList<Integer>();
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        if (this.grid[i][j] == 0) {
+                            pa.add(i*3+j);
+                        }
+                    }
+                }
+                action = pa.get(int(random(pa.size())));
+            }
+            else action = bestMove(this);
+
             int x = action % 3;
             int y = floor(action / 3);
             if (this.grid[y][x] != 0 || this.size < 1) return; // Check if cell is empty or animation is finished
@@ -292,8 +305,6 @@ int[][] deepCopy(int[][] original) {
     final int[][] result = new int[original.length][];
     for (int i = 0; i < original.length; i++) {
         result[i] = Arrays.copyOf(original[i], original[i].length);
-        // For Java versions prior to Java 6 use the next:
-        // System.arraycopy(original[i], 0, result[i], 0, original[i].length);
     }
     return result;
 }
