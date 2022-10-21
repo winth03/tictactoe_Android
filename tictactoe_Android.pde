@@ -13,10 +13,10 @@ void setup() {
     textAlign(CENTER, CENTER);
     rectMode(CENTER);
     controller = new Controller();
-    save = new Button("Save", width / 4, height - (height / 10 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width / 20,() -> Save());
-    load = new Button("Load", 3 * width / 4, height - (height / 10 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width / 20,() -> Load());
-    clear = new Button("Clear", width / 2, height - (height / 100 + ((height - width) / 8 + 20) / 2), width - 50,(height - width) / 8 + 20, width / 20,() -> Clear());
-    hint = new Button("Hint", width / 2,(height / 100 + ((height - width) / 8 + 20) / 2), width - 50,(height - width) / 8 + 20, width / 20, color(43, 53, 102), color(201, 141, 91), true,() -> Hint());
+    save = new Button("Save", width / 4, height - (height / 10 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width / 20);
+    load = new Button("Load", 3 * width / 4, height - (height / 10 + ((height - width) / 8 + 20) / 2), width / 2 - 50,(height - width) / 8 + 20, width / 20);
+    clear = new Button("Clear", width / 2, height - (height / 100 + ((height - width) / 8 + 20) / 2), width - 50,(height - width) / 8 + 20, width / 20);
+    hint = new Button("Hint", width / 2,(height / 100 + ((height - width) / 8 + 20) / 2), width - 50,(height - width) / 8 + 20, width / 20, color(43, 53, 102), color(201, 141, 91), true);
     buttons = new Button[] {save, load, clear, hint};
     
     // Try to load last save
@@ -42,7 +42,7 @@ void draw() {
         model.increaseSize(0.1);
     }
     if (winner != null && size >= 1 && alpha > 0) { // Win animation
-        model.fade(-2);
+        model.fade( - 2);
     }
     
     // Show game result
@@ -52,7 +52,7 @@ void draw() {
         if (winner != "") {
             text(winner + " WINS", width / 2, height / 2);
         } else if (winner == "") {
-            text("DRAW", width / 2, height / 2);
+            text("TIE", width / 2, height / 2);
         }
         textSize(height / 30);
         text("Tap to restart", width / 2, height / 2 + height / 15);
@@ -61,30 +61,47 @@ void draw() {
     fill(225, alpha);
     textSize((height - width) / 8);
     if (turn == 1) {
-        text("Turn : O", width / 2, (height/2 - width/2) - ((height - width) / 8 + 20));
+        text("Turn : O", width / 2,(height / 2 - width / 2) - ((height - width) / 8 + 20));
     } else {
-        text("Turn : X", width / 2, (height/2 - width/2) - ((height - width) / 8 + 20));
+        text("Turn : X", width / 2,(height / 2 - width / 2) - ((height - width) / 8 + 20));
     }
-    for (Button btn : buttons) {
-        if (!btn.toggle) { // Button hover
-            btn.col = mousePressed && btn.overButton() ? btn.col2 : btn.col1;
+    for (int i = 0; i < buttons.length; i++) {
+        if (!buttons[i].toggle) {
+            if (buttons[i].overButton() && !mousePressed) {
+                buttons[i].col = buttons[i].col2;
+            }
+            else{
+                if (buttons[i].overButton() && mousePressed) {
+                    buttons[i].col = buttons[i].col3;
+                }
+                else{
+                    buttons[i].col = buttons[i].col1;
+                }
+            }
         }
-        btn.show();
+        buttons[i].show();
     }
     view.show();
     controller.checkWin();
     
     // Show status
     textSize(width / 20);
-    text("Save : " + (saved ? "OK" : "N/A") + " Hint : " + (model.getHint() ? "ON" : "OFF"), width / 2, (height/2 - width/2) + width + (height - width) / 50 + 10);
+    text("Save : " + (saved ? "OK" : "N/A") + " Hint : " + (model.getHint() ? "ON" : "OFF"), width / 2,(height / 2 - width / 2) + width + (height - width) / 50 + 10);
 }
 
 void mouseReleased() {
     // Button pressed
-    for (Button btn : buttons) {
-        if (btn.overButton()) {
-            btn.pressedEvent();
-        }
+    if (save.overButton()) {
+        Save();
+    }
+    if (load.overButton()) {
+        Load();
+    }
+    if (clear.overButton()) {
+        Clear();
+    }
+    if (hint.overButton()) {
+        Hint();
     }
     // Update XO
     controller.updateBoard();
@@ -109,25 +126,26 @@ void Save() {
 void Load() {
     // Load data
     Table data = loadTable("save.csv");
-    int xCount = 0, oCount = 0, rowCount = 0;
-    for (TableRow row : data.rows()) {
-        for (int i = 0; i < 3; i++) {
-            int symbol = row.getInt(i);
-            controller.model.setCell(i, rowCount, symbol);
-            if (symbol == 1) oCount++;
-            else if (symbol == -1) xCount++;
-        }
-        rowCount++;
-    }
+    int xCount = 0, oCount = 0, rowCount = data.getRowCount();
     if (rowCount == 0) {
         saved = false;
         return;
     } 
+    for (int i = 0; i < rowCount; i++) {
+        TableRow row = data.getRow(i);
+        for (int j = 0; j < 3; j++) {
+            int symbol = row.getInt(j);
+            controller.model.setCell(j, i, symbol);
+            if (symbol == 1) oCount++;
+            else if (symbol == -1) xCount++;
+        }
+    }
     controller.model.setTurn(oCount > xCount ? - 1 : 1);
     saved = true;
 }
 
 void Clear() {
+    // Clear board
     controller.resetBoard();
 }
 
@@ -141,6 +159,7 @@ void CreateFile() {
 void Hint() {
     // Toggle hint
     controller.model.toggleHint();
+    hint.toggleColor();
 }
 
 // Classes
@@ -148,11 +167,10 @@ void Hint() {
 class Button {
     float posX, posY, rectWidth, rectHeight, radius;
     String text;
-    color col, col1, col2;
+    color col, col1, col2, col3;
     boolean toggle;
-    Runnable func;
     
-    Button(String text, float x, float y, float rectWidth, float rectHeight, float radius, Runnable func) {
+    Button(String text, float x, float y, float rectWidth, float rectHeight, float radius) {
         this.text = text;
         this.posX = x;
         this.posY = y;
@@ -161,12 +179,12 @@ class Button {
         this.radius = radius;
         this.col1 = color(43, 53, 102);
         this.col2 = color(13, 23, 72);
+        this.col3 = color(0, 0, 42);
         this.col = this.col1;
-        this.func = func;
         this.toggle = false;
     }
     
-    Button(String text, float x, float y, float rectWidth, float rectHeight, float radius, color col1, color col2, boolean toggle, Runnable func) {
+    Button(String text, float x, float y, float rectWidth, float rectHeight, float radius, color col1, color col2, boolean toggle) {
         this.text = text;
         this.posX = x;
         this.posY = y;
@@ -176,7 +194,6 @@ class Button {
         this.col1 = col1;
         this.col2 = col2;
         this.col = this.col1;
-        this.func = func;
         this.toggle = toggle;
     }
     
@@ -190,8 +207,7 @@ class Button {
         text(this.text, this.posX, this.posY, this.rectWidth, this.rectHeight);
     }
     
-    void pressedEvent() {
-        this.func.run();
+    void toggleColor() {
         if (this.toggle) {
             this.col = this.col == this.col1 ? hint.col2 : hint.col1;
         }
@@ -237,52 +253,52 @@ class Model {
     void setTurn(int turn) {
         this.turn = turn;
     }
-
+    
     int getAlpha() {
         return this.alpha;
     }
-
+    
     void fade(int alpha) {
         this.alpha += alpha;
     }
-
+    
     void switchTurn() {
-        this.turn *= - 1;
+        this.turn *= -1;
     }
-
+    
     float getSize() {
         return this.size;
     }
-
+    
     void increaseSize(float size) {
         this.size += size;
     }
-
+    
     void setSize(float size) {
         this.size = size;
     }
-
+    
     int getNewSymbol(int index) {
         return this.newSymbol[index];
     }
-
+    
     void setNewSymbol(int x, int y) {
         this.newSymbol[0] = x;
         this.newSymbol[1] = y;
     }
-
+    
     String getWinner() {
         return this.winner;
     }
-
+    
     void setWinner(String winner) {
         this.winner = winner;
     }
-
+    
     boolean getHint() {
         return this.hint;
     }
-
+    
     void toggleHint() {
         this.hint = !this.hint;
     }
@@ -294,14 +310,14 @@ class View {
     View(Model model) {
         this.model = model;
     }
-
+    
     void O(int x, int y, color col) {
         stroke(col);
         noFill();
         if (x == this.model.getNewSymbol(0) && y == this.model.getNewSymbol(1)) { // Check if symbol is new then play animation
-            circle((width / 3) * x + (width / 3) / 2, (height/2 - width/2) + (width / 3) * y + (width / 3) / 2,((width / 3) - (width / 3) * 0.2) * this.model.getSize());
+            circle((width / 3) * x + (width / 3) / 2,(height / 2 - width / 2) + (width / 3) * y + (width / 3) / 2,((width / 3) - (width / 3) * 0.2) * this.model.getSize());
         } else {
-            circle((width / 3) * x + (width / 3) / 2, (height/2 - width/2) + (width / 3) * y + (width / 3) / 2,(width / 3) - (width / 3) * 0.2);
+            circle((width / 3) * x + (width / 3) / 2,(height / 2 - width / 2) + (width / 3) * y + (width / 3) / 2,(width / 3) - (width / 3) * 0.2);
         }
     }
     
@@ -309,14 +325,14 @@ class View {
         stroke(col);
         noFill();
         if (x == this.model.getNewSymbol(0) && y == this.model.getNewSymbol(1)) { // Check if symbol is new then play animation
-            line((width / 3) * x + (width / 3) * (0.5 - 0.3 * this.model.getSize()), (height/2 - width/2) + (width / 3) * y + (width / 3) * (0.5 - 0.3 * this.model.getSize()),(width / 3) * x + (width / 3) * (0.5 + 0.3 * this.model.getSize()), (height/2 - width/2) + (width / 3) * y + (width / 3) * (0.5 + 0.3 * this.model.getSize()));
-            line((width / 3) * x + (width / 3) * (0.5 + 0.3 * this.model.getSize()), (height/2 - width/2) + (width / 3) * y + (width / 3) * (0.5 - 0.3 * this.model.getSize()),(width / 3) * x + (width / 3) * (0.5 - 0.3 * this.model.getSize()), (height/2 - width/2) + (width / 3) * y + (width / 3) * (0.5 + 0.3 * this.model.getSize()));
+            line((width / 3) * x + (width / 3) * (0.5 - 0.3 * this.model.getSize()),(height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 - 0.3 * this.model.getSize()),(width / 3) * x + (width / 3) * (0.5 + 0.3 * this.model.getSize()),(height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 + 0.3 * this.model.getSize()));
+            line((width / 3) * x + (width / 3) * (0.5 + 0.3 * this.model.getSize()),(height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 - 0.3 * this.model.getSize()),(width / 3) * x + (width / 3) * (0.5 - 0.3 * this.model.getSize()),(height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 + 0.3 * this.model.getSize()));
         } else {
-            line((width / 3) * x + (width / 3) * 0.2, (height/2 - width/2) + (width / 3) * y + (width / 3) * 0.2,(width / 3) * x + (width / 3) * 0.8, (height/2 - width/2) + (width / 3) * y + (width / 3) * 0.8);
-            line((width / 3) * x + (width / 3) * 0.8, (height/2 - width/2) + (width / 3) * y + (width / 3) * 0.2,(width / 3) * x + (width / 3) * 0.2, (height/2 - width/2) + (width / 3) * y + (width / 3) * 0.8);
+            line((width / 3) * x + (width / 3) * 0.2,(height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.2,(width / 3) * x + (width / 3) * 0.8,(height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.8);
+            line((width / 3) * x + (width / 3) * 0.8,(height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.2,(width / 3) * x + (width / 3) * 0.2,(height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.8);
         }
     }
-
+    
     void hint(int countO, int countX, int[] hintCell) {
         if (hintCell[0] != -1) {
             if (countO == 2) {
@@ -329,7 +345,7 @@ class View {
             }
         }
     }
-
+    
     void winnerLine(float x1, float y1, float x2, float y2) {
         stroke(225, 0, 0, this.model.getAlpha());
         line(x1, y1, x2, y2);
@@ -340,9 +356,9 @@ class View {
         strokeWeight(10);
         for (int i = 1; i < 3; i++) {
             // Vertical
-            line((width / 3) * i, (height/2 - width/2) + 25,(width / 3) * i, (height/2 - width/2) + width - 25);
+            line((width / 3) * i,(height / 2 - width / 2) + 25,(width / 3) * i,(height / 2 - width / 2) + width - 25);
             // Horizontal
-            line(25, (height/2 - width/2) + (width / 3) * i, width - 25, (height/2 - width/2) + (width / 3) * i);
+            line(25,(height / 2 - width / 2) + (width / 3) * i, width - 25,(height / 2 - width / 2) + (width / 3) * i);
         }
         
         // Draw symbols in each cell
@@ -377,7 +393,7 @@ class Controller {
         // Update grid
         int x, y;
         x = floor(mouseX / (width / 3));
-        y = floor((mouseY - (height/2 - width/2)) / (width / 3));
+        y = floor((mouseY - (height / 2 - width / 2)) / (width / 3));
         
         if (x < 0 || x > 2 || y < 0 || y > 2) return; // Check if index is out of range
         if (this.model.getCell(x, y) != 0 || this.model.getSize() < 1) return; // Check if cell is empty or animation is finished
@@ -385,9 +401,9 @@ class Controller {
         this.model.setCell(x, y, model.getTurn());
         this.model.setNewSymbol(x, y);
         this.model.setSize(0);
-        this.model.setTurn(-this.model.getTurn());
+        this.model.setTurn( - this.model.getTurn());
     }
-
+    
     void resetBoard() {
         this.model = new Model(this.model.getHint());
         this.view = new View(this.model);
@@ -397,42 +413,42 @@ class Controller {
         strokeWeight(20);
         float halfCell = width / 6;
         boolean draw = true;
-
+        
         for (int i = 0; i < 3; i++) {
             // Check horizontal
             if (this.model.getCell(0, i) == this.model.getCell(1, i) && this.model.getCell(1, i) == this.model.getCell(2, i) && this.model.getCell(0, i) != 0) {
                 this.model.setWinner(this.model.getCell(0, i) == 1 ? "O" : "X");
-                this.view.winnerLine(0, (height/2 - width/2) + (width / 3) * i + halfCell, width, (height/2 - width/2) + (width / 3) * i + halfCell);
+                this.view.winnerLine(0,(height / 2 - width / 2) + (width / 3) * i + halfCell, width,(height / 2 - width / 2) + (width / 3) * i + halfCell);
             }
             // Check vertical
             if (this.model.getCell(i, 0) == this.model.getCell(i, 1) && this.model.getCell(i, 1) == this.model.getCell(i, 2) && this.model.getCell(i, 0) != 0) {
                 this.model.setWinner(this.model.getCell(i, 0) == 1 ? "O" : "X");
-                this.view.winnerLine((width / 3) * i + halfCell, (height/2 - width/2), (width / 3) * i + halfCell, (height/2 - width/2) + width);
+                this.view.winnerLine((width / 3) * i + halfCell,(height / 2 - width / 2),(width / 3) * i + halfCell,(height / 2 - width / 2) + width);
             }
             // Check draw
             for (int j = 0; j < 3; j++) {
                 if (this.model.getCell(i, j) == 0) draw = false;
             }
         }
-
+        
         // Check diagonal
         if (this.model.getCell(0, 0) == this.model.getCell(1, 1) && this.model.getCell(1, 1) == this.model.getCell(2, 2) && this.model.getCell(0, 0) != 0) {
             this.model.setWinner(this.model.getCell(0, 0) == 1 ? "O" : "X");
-            this.view.winnerLine(0, (height/2 - width/2), width, (height/2 - width/2) + width);
+            this.view.winnerLine(0,(height / 2 - width / 2), width,(height / 2 - width / 2) + width);
         }
         if (this.model.getCell(2, 0) == this.model.getCell(1, 1) && this.model.getCell(1, 1) == this.model.getCell(0, 2) && this.model.getCell(2, 0) != 0) {
             this.model.setWinner(this.model.getCell(2, 0) == 1 ? "O" : "X");
-            this.view.winnerLine(width, (height/2 - width/2), 0, (height/2 - width/2) + width);
+            this.view.winnerLine(width,(height / 2 - width / 2), 0,(height / 2 - width / 2) + width);
         }
-
+        
         if (draw && this.model.getWinner() == null) {
-            this.model.setWinner("draw");
+            this.model.setWinner("");
         }
         if (this.model.getHint() && this.model.getWinner() == null) {
             this.checkHint();
         }
     }
-
+    
     void checkHint() {
         int countX, countO;
         int[] hintCell;
@@ -440,7 +456,7 @@ class Controller {
         for (int i = 0; i < 3; i++) {
             countO = 0;
             countX = 0;
-            hintCell = new int[] {-1, -1};
+            hintCell = new int[] { - 1, -1};
             for (int j = 0; j < 3; j++) {
                 if (this.model.getCell(j, i) == 1) {
                     countO++;
@@ -457,7 +473,7 @@ class Controller {
         for (int i = 0; i < 3; i++) {
             countO = 0;
             countX = 0;
-            hintCell = new int[] {-1, -1};
+            hintCell = new int[] { - 1, -1};
             for (int j = 0; j < 3; j++) {
                 if (this.model.getCell(i, j) == 1) {
                     countO++;
@@ -473,7 +489,7 @@ class Controller {
         //Left -Right Diagonal
         countO = 0;
         countX = 0;
-        hintCell = new int[] {-1, -1};
+        hintCell = new int[] { - 1, -1};
         for (int i = 0; i < 3; i++) {
             if (this.model.getCell(i, i) == 1) {
                 countO++;
@@ -488,7 +504,7 @@ class Controller {
         // Right- Left Diagonal
         countO = 0;
         countX = 0;
-        hintCell = new int[] {-1, -1};
+        hintCell = new int[] { - 1, -1};
         for (int i = 0; i < 3; i++) {
             if (this.model.getCell(2 - i, i) == 1) {
                 countO++;
