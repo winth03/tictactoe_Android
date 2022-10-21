@@ -42,7 +42,7 @@ void draw() {
         model.increaseSize(0.1);
     }
     if (winner != null && size >= 1 && alpha > 0) { // Win animation
-        model.fade( - 2);
+        model.fade( -2);
     }
     
     // Show game result
@@ -86,7 +86,7 @@ void draw() {
     
     // Show status
     textSize(width / 20);
-    text("Save : " + (saved ? "OK" : "N/A") + " Hint : " + (model.getHint() ? "ON" : "OFF"), width / 2,(height / 2 - width / 2) + width + (height - width) / 50 + 10);
+    text("Save : " + str(saved).toUpperCase() + " Hint : " + str(model.getHint()).toUpperCase(), width / 2,(height / 2 - width / 2) + width + (height - width) / 50 + 10);
 }
 
 void mouseReleased() {
@@ -136,11 +136,22 @@ void Load() {
         for (int j = 0; j < 3; j++) {
             int symbol = row.getInt(j);
             controller.model.setCell(j, i, symbol);
-            if (symbol == 1) oCount++;
-            else if (symbol == -1) xCount++;
+            if (symbol == 1) {
+                oCount++;
+            }
+            else {
+                if (symbol == -1) {
+                    xCount++;
+                }
+            }
         }
     }
-    controller.model.setTurn(oCount > xCount ? - 1 : 1);
+    if (oCount > xCount) {
+        controller.model.setTurn(-1);
+    }
+    else {
+        controller.model.setTurn(1);
+    }
     saved = true;
 }
 
@@ -159,7 +170,11 @@ void CreateFile() {
 void Hint() {
     // Toggle hint
     controller.model.toggleHint();
-    hint.toggleColor();
+    if (controller.model.getHint()) { // Toggle color
+        hint.col = hint.col2;
+    } else {
+        hint.col = hint.col1;
+    }
 }
 
 // Classes
@@ -205,12 +220,6 @@ class Button {
         textSize((height - width) / 8);
         fill(225);
         text(this.text, this.posX, this.posY, this.rectWidth, this.rectHeight);
-    }
-    
-    void toggleColor() {
-        if (this.toggle) {
-            this.col = this.col == this.col1 ? hint.col2 : hint.col1;
-        }
     }
     
     boolean overButton() {
@@ -401,7 +410,7 @@ class Controller {
         this.model.setCell(x, y, model.getTurn());
         this.model.setNewSymbol(x, y);
         this.model.setSize(0);
-        this.model.setTurn( - this.model.getTurn());
+        this.model.setTurn( -this.model.getTurn());
     }
     
     void resetBoard() {
@@ -417,12 +426,22 @@ class Controller {
         for (int i = 0; i < 3; i++) {
             // Check horizontal
             if (this.model.getCell(0, i) == this.model.getCell(1, i) && this.model.getCell(1, i) == this.model.getCell(2, i) && this.model.getCell(0, i) != 0) {
-                this.model.setWinner(this.model.getCell(0, i) == 1 ? "O" : "X");
+                if (this.model.getCell(0, i) == 1) {
+                    this.model.setWinner("O");
+                }
+                else {
+                    this.model.setWinner("X");
+                }
                 this.view.winnerLine(0,(height / 2 - width / 2) + (width / 3) * i + halfCell, width,(height / 2 - width / 2) + (width / 3) * i + halfCell);
             }
             // Check vertical
             if (this.model.getCell(i, 0) == this.model.getCell(i, 1) && this.model.getCell(i, 1) == this.model.getCell(i, 2) && this.model.getCell(i, 0) != 0) {
-                this.model.setWinner(this.model.getCell(i, 0) == 1 ? "O" : "X");
+                if (this.model.getCell(i, 0) == 1) {
+                    this.model.setWinner("O");
+                }
+                else {
+                    this.model.setWinner("X");
+                }
                 this.view.winnerLine((width / 3) * i + halfCell,(height / 2 - width / 2),(width / 3) * i + halfCell,(height / 2 - width / 2) + width);
             }
             // Check draw
@@ -433,11 +452,21 @@ class Controller {
         
         // Check diagonal
         if (this.model.getCell(0, 0) == this.model.getCell(1, 1) && this.model.getCell(1, 1) == this.model.getCell(2, 2) && this.model.getCell(0, 0) != 0) {
-            this.model.setWinner(this.model.getCell(0, 0) == 1 ? "O" : "X");
+            if (this.model.getCell(0, 0) == 1) {
+                this.model.setWinner("O");
+            }
+            else {
+                this.model.setWinner("X");
+            }
             this.view.winnerLine(0,(height / 2 - width / 2), width,(height / 2 - width / 2) + width);
         }
         if (this.model.getCell(2, 0) == this.model.getCell(1, 1) && this.model.getCell(1, 1) == this.model.getCell(0, 2) && this.model.getCell(2, 0) != 0) {
-            this.model.setWinner(this.model.getCell(2, 0) == 1 ? "O" : "X");
+            if (this.model.getCell(2, 0) == 1) {
+                this.model.setWinner("O");
+            }
+            else {
+                this.model.setWinner("X");
+            }
             this.view.winnerLine(width,(height / 2 - width / 2), 0,(height / 2 - width / 2) + width);
         }
         
