@@ -15,7 +15,7 @@ void setup() {
     rectMode(CENTER);
 
     // Create object for MVC
-    model = new Model();
+    model = new Model(3);
     view = new View(model);
     controller = new Controller(model, view);
 
@@ -30,7 +30,7 @@ void setup() {
     try {
         controller.Load();
     }
-    catch(NullPointerException e) {}
+    catch(Exception e) {}
 }
 
 void draw() {
@@ -44,7 +44,7 @@ void draw() {
         model.increaseSize(0.1);
     }
     if (winner != null && size >= 1 && alpha > 0) { // Win animation
-        model.fade( -2);
+        model.fade(-2);
     }
 
     // Show game result
@@ -59,7 +59,7 @@ void draw() {
         textSize(height / 30);
         text("Tap to restart", width / 2, height / 2 + height / 15);
     }
-    // Draw UI
+    // tie UI
     fill(225, alpha);
     textSize((height - width) / 8);
     if (turn == 1) {
@@ -95,7 +95,10 @@ void mouseReleased() {
         controller.Save();
     }
     if (load.overButton()) {
-        controller.Load();
+        try {
+            controller.Load();
+        }
+        catch(Exception e) {}
     }
     if (clear.overButton()) {
         model.resetBoard();
@@ -170,16 +173,21 @@ class Model {
     int[] newSymbol;
     float size;
     String winner;
-    int turn, alpha;
+    int turn, alpha, gridSize;
     boolean hint;
 
-    Model() {
-        this.grid = new int[3][3];
+    Model(int gridSize) {
+        this.gridSize = gridSize;
+        this.grid = new int[gridSize][gridSize];
         this.newSymbol = new int[] { - 1, -1};
         this.size = 1;
         this.turn = 1;
         this.alpha = 255;
         this.hint = false;
+    }
+
+    int getGridSize() {
+        return this.gridSize;
     }
 
     int getCell(int x, int y) {
@@ -248,7 +256,7 @@ class Model {
     }
 
     void resetBoard() {
-        this.grid = new int[3][3];
+        this.grid = new int[this.gridSize][this.gridSize];
         this.newSymbol = new int[] { - 1, -1};
         this.size = 1;
         this.turn = 1;
@@ -259,18 +267,20 @@ class Model {
 
 class View {
     Model model;
+    float cellSize;
 
     View(Model model) {
         this.model = model;
+        this.cellSize = width / this.model.getGridSize();
     }
 
     void O(int x, int y, color col) {
         stroke(col);
         noFill();
         if (x == this.model.getNewSymbol(0) && y == this.model.getNewSymbol(1)) { // Check if symbol is new then play animation
-            circle((width / 3) * x + (width / 3) / 2, (height / 2 - width / 2) + (width / 3) * y + (width / 3) / 2, ((width / 3) - (width / 3) * 0.2) * this.model.getSize());
+            circle(this.cellSize * x + this.cellSize / 2, (height / 2 - width / 2) + this.cellSize * y + this.cellSize / 2, (this.cellSize - this.cellSize * 0.2) * this.model.getSize());
         } else {
-            circle((width / 3) * x + (width / 3) / 2, (height / 2 - width / 2) + (width / 3) * y + (width / 3) / 2, (width / 3) - (width / 3) * 0.2);
+            circle(this.cellSize * x + this.cellSize / 2, (height / 2 - width / 2) + this.cellSize * y + this.cellSize / 2, this.cellSize - this.cellSize * 0.2);
         }
     }
 
@@ -278,20 +288,20 @@ class View {
         stroke(col);
         noFill();
         if (x == this.model.getNewSymbol(0) && y == this.model.getNewSymbol(1)) { // Check if symbol is new then play animation
-            line((width / 3) * x + (width / 3) * (0.5 - 0.3 * this.model.getSize()), (height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 - 0.3 * this.model.getSize()), (width / 3) * x + (width / 3) * (0.5 + 0.3 * this.model.getSize()), (height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 + 0.3 * this.model.getSize()));
-            line((width / 3) * x + (width / 3) * (0.5 + 0.3 * this.model.getSize()), (height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 - 0.3 * this.model.getSize()), (width / 3) * x + (width / 3) * (0.5 - 0.3 * this.model.getSize()), (height / 2 - width / 2) + (width / 3) * y + (width / 3) * (0.5 + 0.3 * this.model.getSize()));
+            line(this.cellSize * x + this.cellSize * (0.5 - 0.3 * this.model.getSize()), (height / 2 - width / 2) + this.cellSize * y + this.cellSize * (0.5 - 0.3 * this.model.getSize()), this.cellSize * x + this.cellSize * (0.5 + 0.3 * this.model.getSize()), (height / 2 - width / 2) + this.cellSize * y + this.cellSize * (0.5 + 0.3 * this.model.getSize()));
+            line(this.cellSize * x + this.cellSize * (0.5 + 0.3 * this.model.getSize()), (height / 2 - width / 2) + this.cellSize * y + this.cellSize * (0.5 - 0.3 * this.model.getSize()), this.cellSize * x + this.cellSize * (0.5 - 0.3 * this.model.getSize()), (height / 2 - width / 2) + this.cellSize * y + this.cellSize * (0.5 + 0.3 * this.model.getSize()));
         } else {
-            line((width / 3) * x + (width / 3) * 0.2, (height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.2, (width / 3) * x + (width / 3) * 0.8, (height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.8);
-            line((width / 3) * x + (width / 3) * 0.8, (height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.2, (width / 3) * x + (width / 3) * 0.2, (height / 2 - width / 2) + (width / 3) * y + (width / 3) * 0.8);
+            line(this.cellSize * x + this.cellSize * 0.2, (height / 2 - width / 2) + this.cellSize * y + this.cellSize * 0.2, this.cellSize * x + this.cellSize * 0.8, (height / 2 - width / 2) + this.cellSize * y + this.cellSize * 0.8);
+            line(this.cellSize * x + this.cellSize * 0.8, (height / 2 - width / 2) + this.cellSize * y + this.cellSize * 0.2, this.cellSize * x + this.cellSize * 0.2, (height / 2 - width / 2) + this.cellSize * y + this.cellSize * 0.8);
         }
     }
 
     void hint(int countO, int countX, int[] hintCell) {
         if (hintCell[0] != -1) {
-            if (countO == 2) {
+            if (countO == this.model.getGridSize() - 1) {
                 if (this.model.getTurn() == 1) this.O(hintCell[0], hintCell[1], color(225, 50));
                 else this.O(hintCell[0], hintCell[1], color(225, 0, 0, 50));
-            } else if (countX == 2) {
+            } else if (countX == this.model.getGridSize() - 1) {
                 if (this.model.getTurn() == -1) this.X(hintCell[0], hintCell[1], color(225, 50));
                 else this.X(hintCell[0], hintCell[1], color(225, 0, 0, 50));
             }
@@ -305,18 +315,18 @@ class View {
 
     void show() {
         stroke(225, this.model.getAlpha());
-        strokeWeight(10);
-        for (int i = 1; i < 3; i++) {
+        strokeWeight(width / 100);
+        for (int i = 1; i < this.model.getGridSize(); i++) {
             // Vertical
-            line((width / 3) * i, (height / 2 - width / 2) + 25, (width / 3) * i, (height / 2 - width / 2) + width - 25);
+            line(this.cellSize * i, (height / 2 - width / 2) + 25, this.cellSize * i, (height / 2 - width / 2) + width - 25);
             // Horizontal
-            line(25, (height / 2 - width / 2) + (width / 3) * i, width - 25, (height / 2 - width / 2) + (width / 3) * i);
+            line(25, (height / 2 - width / 2) + this.cellSize * i, width - 25, (height / 2 - width / 2) + this.cellSize * i);
         }
 
-        // Draw symbols in each cell
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                strokeWeight(20);
+        // tie symbols in each cell
+        for (int i = 0; i < this.model.getGridSize(); i++) {
+            for (int j = 0; j < this.model.getGridSize(); j++) {
+                strokeWeight(width / 50);
                 // 1 -> O
                 if (this.model.getCell(j, i) == 1) this.O(j, i, color(225, this.model.getAlpha()));
                 // -1 -> X
@@ -329,10 +339,12 @@ class View {
 class Controller {
     Model model;
     View view;
+    int cellSize;
 
     Controller(Model model, View view) {
         this.model = model;
         this.view = view;
+        this.cellSize = width / this.model.getGridSize();
     }
 
     void updateBoard() {
@@ -344,10 +356,10 @@ class Controller {
 
         // Update grid
         int x, y;
-        x = floor(mouseX / (width / 3));
-        y = floor((mouseY - (height / 2 - width / 2)) / (width / 3));
+        x = floor(mouseX / this.cellSize);
+        y = floor((mouseY - (height / 2 - width / 2)) / this.cellSize);
 
-        if (x < 0 || x > 2 || y < 0 || y > 2) return; // Check if index is out of range
+        if (x < 0 || x >= this.model.getGridSize() || y < 0 || y >= this.model.getGridSize()) return; // Check if index is out of range
         if (this.model.getCell(x, y) != 0 || this.model.getSize() < 1) return; // Check if cell is empty or animation is finished
 
         this.model.setCell(x, y, model.getTurn());
@@ -358,53 +370,53 @@ class Controller {
 
     void checkWin() {
         strokeWeight(20);
-        float halfCell = width / 6;
-        boolean draw = true;
+        float halfCell = (width / this.model.getGridSize()) / 2;
+        boolean tie = true;
+        int count_h = 0, count_v = 0, count_d1 = 0, count_d2 = 0;
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < this.model.getGridSize(); i++) {
+            for (int j = 0; j < this.model.getGridSize(); j++) {
+                count_h += this.model.getCell(j, i);
+                count_v += this.model.getCell(i, j);
+                if (this.model.getCell(i, j) == 0) tie = false;
+            }
+            count_d1 += this.model.getCell(i, i);
+            count_d2 += this.model.getCell(this.model.getGridSize() - i - 1, i);
             // Check horizontal
-            if (this.model.getCell(0, i) == this.model.getCell(1, i) && this.model.getCell(1, i) == this.model.getCell(2, i) && this.model.getCell(0, i) != 0) {
-                if (this.model.getCell(0, i) == 1) {
-                    this.model.setWinner("O");
-                } else {
-                    this.model.setWinner("X");
-                }
-                this.view.winnerLine(0, (height / 2 - width / 2) + (width / 3) * i + halfCell, width, (height / 2 - width / 2) + (width / 3) * i + halfCell);
+            if (count_h == this.model.getGridSize()) {
+                this.model.setWinner("O");
+                this.view.winnerLine(0, (height / 2 - width / 2) + this.cellSize * i + halfCell, width, (height / 2 - width / 2) + this.cellSize * i + halfCell);
+            } else if (count_h == -this.model.getGridSize()) {
+                this.model.setWinner("X");
+                this.view.winnerLine(0, (height / 2 - width / 2) + this.cellSize * i + halfCell, width, (height / 2 - width / 2) + this.cellSize * i + halfCell);
             }
             // Check vertical
-            if (this.model.getCell(i, 0) == this.model.getCell(i, 1) && this.model.getCell(i, 1) == this.model.getCell(i, 2) && this.model.getCell(i, 0) != 0) {
-                if (this.model.getCell(i, 0) == 1) {
-                    this.model.setWinner("O");
-                } else {
-                    this.model.setWinner("X");
-                }
-                this.view.winnerLine((width / 3) * i + halfCell, (height / 2 - width / 2), (width / 3) * i + halfCell, (height / 2 - width / 2) + width);
-            }
-            // Check tie
-            for (int j = 0; j < 3; j++) {
-                if (this.model.getCell(i, j) == 0) draw = false;
+            if (count_v == this.model.getGridSize()) {
+                this.model.setWinner("O");
+                this.view.winnerLine(this.cellSize * i + halfCell, (height / 2 - width / 2), this.cellSize * i + halfCell, (height / 2 - width / 2) + width);
+            } else if (count_v == -this.model.getGridSize()) {
+                this.model.setWinner("X");
+                this.view.winnerLine(this.cellSize * i + halfCell, (height / 2 - width / 2), this.cellSize * i + halfCell, (height / 2 - width / 2) + width);
             }
         }
 
         // Check diagonal
-        if (this.model.getCell(0, 0) == this.model.getCell(1, 1) && this.model.getCell(1, 1) == this.model.getCell(2, 2) && this.model.getCell(0, 0) != 0) {
-            if (this.model.getCell(0, 0) == 1) {
-                this.model.setWinner("O");
-            } else {
-                this.model.setWinner("X");
-            }
+        if (count_d1 == this.model.getGridSize()) {
+            this.model.setWinner("O");
+            this.view.winnerLine(0, (height / 2 - width / 2), width, (height / 2 - width / 2) + width);
+        } else if (count_d1 == -this.model.getGridSize()) {
+            this.model.setWinner("X");
             this.view.winnerLine(0, (height / 2 - width / 2), width, (height / 2 - width / 2) + width);
         }
-        if (this.model.getCell(2, 0) == this.model.getCell(1, 1) && this.model.getCell(1, 1) == this.model.getCell(0, 2) && this.model.getCell(2, 0) != 0) {
-            if (this.model.getCell(2, 0) == 1) {
-                this.model.setWinner("O");
-            } else {
-                this.model.setWinner("X");
-            }
+        if (count_d2 == this.model.getGridSize()) {
+            this.model.setWinner("O");
+            this.view.winnerLine(width, (height / 2 - width / 2), 0, (height / 2 - width / 2) + width);
+        } else if (count_d2 == -this.model.getGridSize()) {
+            this.model.setWinner("X");
             this.view.winnerLine(width, (height / 2 - width / 2), 0, (height / 2 - width / 2) + width);
         }
-
-        if (draw && this.model.getWinner() == null) {
+        // Check tie
+        if (tie && this.model.getWinner() == null) {
             this.model.setWinner("");
         }
         if (this.model.getHint() && this.model.getWinner() == null) {
@@ -416,11 +428,11 @@ class Controller {
         int countX, countO;
         int[] hintCell;
         // Horizontal
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < this.model.getGridSize(); i++) {
             countO = 0;
             countX = 0;
             hintCell = new int[] { - 1, -1};
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < this.model.getGridSize(); j++) {
                 if (this.model.getCell(j, i) == 1) {
                     countO++;
                 } else if (this.model.getCell(j, i) == -1) {
@@ -433,11 +445,11 @@ class Controller {
         }
 
         //Vertical
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < this.model.getGridSize(); i++) {
             countO = 0;
             countX = 0;
             hintCell = new int[] { - 1, -1};
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < this.model.getGridSize(); j++) {
                 if (this.model.getCell(i, j) == 1) {
                     countO++;
                 } else if (this.model.getCell(i, j) == -1) {
@@ -453,7 +465,7 @@ class Controller {
         countO = 0;
         countX = 0;
         hintCell = new int[] { - 1, -1};
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < this.model.getGridSize(); i++) {
             if (this.model.getCell(i, i) == 1) {
                 countO++;
             } else if (this.model.getCell(i, i) == -1) {
@@ -468,13 +480,13 @@ class Controller {
         countO = 0;
         countX = 0;
         hintCell = new int[] { - 1, -1};
-        for (int i = 0; i < 3; i++) {
-            if (this.model.getCell(2 - i, i) == 1) {
+        for (int i = 0; i < this.model.getGridSize(); i++) {
+            if (this.model.getCell(this.model.getGridSize() - i - 1, i) == 1) {
                 countO++;
-            } else if (this.model.getCell(2 - i, i) == -1) {
+            } else if (this.model.getCell(this.model.getGridSize() - i - 1, i) == -1) {
                 countX++;
             } else {
-                hintCell = new int[] {2 - i, i};
+                hintCell = new int[] {this.model.getGridSize() - i - 1, i};
             }
         }
         this.view.hint(countO, countX, hintCell);
@@ -483,12 +495,13 @@ class Controller {
     void Save() {
         // Save data
         Table data = new Table();
-        data.addColumn();
-        data.addColumn();
-        data.addColumn();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < this.model.getGridSize(); i++) {
+            data.addColumn();
+        }
+        
+        for (int i = 0; i < this.model.getGridSize(); i++) {
             TableRow row = data.addRow();
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < this.model.getGridSize(); j++) {
                 row.setInt(j, this.model.getCell(j, i));
             }
         }
@@ -504,7 +517,7 @@ class Controller {
         }
         for (int i = 0; i < rowCount; i++) {
             TableRow row = data.getRow(i);
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < this.model.getGridSize(); j++) {
                 int symbol = row.getInt(j);
                 this.model.setCell(j, i, symbol);
                 if (symbol == 1) {
