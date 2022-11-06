@@ -15,7 +15,7 @@ void setup() {
     rectMode(CENTER);
 
     // Create object for MVC
-    model = new Model(1);
+    model = new Model(3);
     view = new View(model);
     controller = new Controller(model, view);
 
